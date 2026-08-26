@@ -182,6 +182,137 @@
     margin-bottom: 12px;
   }
 
+  /* ===== EMBEDDED CHATBOT WIDGET STYLES ===== */
+  .chat-widget-btn {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: linear-gradient(135deg, #1976d2, #0d47a1);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 3000;
+    transition: transform 0.2s;
+  }
+  .chat-widget-btn:hover {
+    transform: scale(1.05);
+  }
+
+  .chat-widget-container {
+    position: fixed;
+    bottom: 90px;
+    right: 25px;
+    width: 380px;
+    height: 520px;
+    background-color: #1e293b;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 3000;
+    border: 1px solid #334155;
+    animation: fadeInModal 0.2s ease;
+  }
+
+  .chat-widget-header {
+    background-color: #090d16;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+  }
+
+  .chat-widget-header h3 {
+    color: #38bdf8;
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .chat-widget-header .close-chat {
+    color: #aaa;
+    font-size: 20px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .chat-widget-header .close-chat:hover {
+    color: #fff;
+  }
+
+  .chat-widget-messages {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .chat-msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+    color: #f8fafc;
+  }
+
+  .chat-msg.user {
+    background-color: #2563eb;
+    align-self: flex-end;
+    border-bottom-right-radius: 2px;
+  }
+
+  .chat-msg.bot {
+    background-color: #334155;
+    align-self: flex-start;
+    border-bottom-left-radius: 2px;
+  }
+
+  .chat-widget-input-area {
+    padding: 12px;
+    background-color: #090d16;
+    border-top: 1px solid #334155;
+    display: flex;
+    gap: 8px;
+  }
+
+  .chat-widget-input-area input {
+    flex: 1;
+    padding: 10px;
+    background-color: #1e293b;
+    border: 1px solid #475569;
+    color: white;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    outline: none;
+  }
+
+  .chat-widget-input-area input:focus {
+    border-color: #3b82f6;
+  }
+
+  .chat-widget-input-area button {
+    padding: 0 15px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
   /* ===== FOOTER ===== */
   footer {
     text-align: center;
@@ -209,6 +340,7 @@
   @media (max-width: 480px) {
     .container { padding: 25px 20px; }
     .header h1 { font-size: 20px; }
+    .chat-widget-container { width: 90%; right: 5%; left: 5%; height: 450px; }
   }
 </style>
 </head>
@@ -303,6 +435,25 @@
   </div>
 </div>
 
+<!-- EMBEDDED CHATBOT WIDGET HTML -->
+<button class="chat-widget-btn" onclick="toggleChatWidget()">
+  💬 Ask AI Resume Agent
+</button>
+
+<div class="chat-widget-container" id="chatWidget">
+  <div class="chat-widget-header">
+    <h3>Pankaj Career Assistant</h3>
+    <span class="close-chat" onclick="toggleChatWidget()">&times;</span>
+  </div>
+  <div class="chat-widget-messages" id="chatMessages">
+    <div class="chat-msg bot">Hello! I am your Professional Career Assistant & Resume RAG Agent. Ask me anything about Pankaj's professional background, engineering experience, or software stack!</div>
+  </div>
+  <div class="chat-widget-input-area">
+    <input type="text" id="userInput" placeholder="Ask about CV & experience..." onkeypress="handleKeyPress(event)" />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
 <script>
   function openPage(page) { 
     window.location.href = page; 
@@ -327,6 +478,148 @@
   document.addEventListener("contextmenu", function(e) { 
     e.preventDefault(); 
   });
+
+  // ===== CHATBOT EMBED SCRIPT & LOGIC =====
+  function toggleChatWidget() {
+    const chatWidget = document.getElementById('chatWidget');
+    if (chatWidget.style.display === 'flex') {
+      chatWidget.style.display = 'none';
+    } else {
+      chatWidget.style.display = 'flex';
+      document.getElementById('userInput').focus();
+    }
+  }
+
+  const apiKey = "AQ.Ab8RN6IX97Xo78t2KoSZjDPVaAGQumWkn_HINvfSTZldJVSGYg";
+  
+  const systemPrompt = `You are a professional Career Assistant and Resume RAG Agent. Your job is to answer questions about the user's professional background, engineering experience, steel fabrication estimation skills, technical stack, CAD/software experience, automation work, and project history based STRICTLY on the CV text provided below.
+
+RULES:
+1. Use only facts supported by the CV text provided in this system message.
+2. Never invent companies, job titles, dates, qualifications, skills, responsibilities, achievements, or project details.
+3. If the requested information is not found in the CV text, clearly state that the information is not available.
+4. Keep answers clear, concise, and use bullet points when listing skills, experience, or projects.
+
+---
+=== CANDIDATE PROFILE ===
+Name: Pankaj Kumar Prajapati
+Title: Senior Mechanical Draftsman | Mechanical Designer | Structures Detailer | 3D Modeler | Estimator | Web Application Developer
+Location: Dubai / Sharjah, UAE
+Phone: +971-522173595
+Email: pankajoffice5@gmail.com / pk081187@gmail.com
+Date of Birth: August 6, 1990
+Age: 35 years
+Passport No: X5640661 (Valid until Feb 15, 2033, Issued in Dubai)
+UAE Visa Status: Employment Visa (Valid until Jul 2027)
+
+=== PROFESSIONAL SUMMARY ===
+Steel industry professional with 15+ years of combined experience in heavy equipment manufacturing, industrial fabrication, structural steel detailing, hydraulics, piping, estimation, engineering design, production planning, and site supervision. Expert in generating accurate fabrication drawings and 3D models using AutoCAD, Solid Edge, and Tekla. Uniquely skilled at bridging mechanical engineering with software automation (HTML, CSS, JavaScript, Google Apps Script), developing custom estimation tools, plate nesting algorithms, and automated dashboards to enhance operational throughput.
+
+=== SOFTWARE & TECHNICAL SKILLS ===
+* CAD & Design: AutoCAD (2D & 3D), Solid Edge (2D, 3D, Drafting, Parametric Modeling, Render, Animation, BOM), Tekla Structures (Medium/Basic), CorelDraw.
+* Engineering & Fabrication: Structural Steel Detailing, Sheet Metal, Piping, Hydraulics, BOM Preparation, Estimation & Costing, Site Supervision, Workshop Coordination, Raw Material Stock Management, Industrial Safety.
+* Automation & Programming: HTML, CSS, JavaScript, Google Apps Script, Google Sheets Integration, Advanced MS Excel (pre-loaded metal weight), Custom Plate & Raw Material Nesting.
+* Physical & Workshop Skills: MIG & ARC Welding, Gas Cutting, Hydraulic Cylinder Repairing and Systems, Machine Operations (Lathe, Thread Cutting, Band Saw, Press Machine).
+
+=== PROFESSIONAL EXPERIENCE ===
+1. AL SANA ENGINEERING, Sharjah, UAE (Nov 2025 - Present)
+   * Role: Draftsman & Estimation
+   * Responsibilities: Prepare precise fabrication, structural, and mechanical production drawings utilizing AutoCAD, Solid Edge, and Tekla. Design custom fabrication components including steel structures, handrails, trench covers, and specialized lathe machine parts. Execute project estimations, material take-offs, and cost calculations using advanced Excel and customized HTML tools. Coordinate between workshop production teams and on-site installation crews. Developed automatic estimation checkers, nesting tools, file sharing systems, sales enquiry email reminders, metal weight calculators, and attendance formatters.
+
+2. LINK MIDDLE EAST, United Arab Emirates (Dec 2022 - Nov 2025)
+   * Role: Draftsman & Estimation Engineer / Draftsman
+   * Responsibilities: Designed architectural and structural steel elements including wrought iron works, security fencing systems, decorative fencing, and heavy handrails. Generated detailed fabrication packages and complete estimation dossiers for high-value commercial projects. Supervised workshop fabrication, installation sequences, and quality control checkpoints. Maximized raw material utilization and reduced wastage through customized digital plate and profile nesting methods (Signage Estimation, X-DAS Drawing and Estimation system).
+
+3. AL MATAR ENGINEERING CO. LLC, United Arab Emirates (Dec 2021 - Jul 2022)
+   * Role: Mechanical Draftsman
+   * Responsibilities: Created structural columns, beams, grabbers, hydraulic systems, and heavy-duty JCB buckets. Prepared complete fabrication and shop assembly drawings to guide manufacturing shopfloors. Provided engineering support and drafting for commercial solar panel installation projects. Supervised and coordinated work crews, ensuring adherence to specifications.
+
+4. AL TASAHEEL HYDRAULICS LLC, Sharjah, UAE (Sep 2014 - Dec 2021)
+   * Role: Mechanical Draftsman / Fabrication Supervisor
+   * Responsibilities: Authored complex structural steel, piping, and hydraulic system fabrication drawings. Supervised workshop fabrication, system assembly, pressure testing, and field installation activities. Coordinated manpower allocations, material requisition schedules, and shopfloor workflows. Assisted workers with portable tools (welding, bolting, chipping) and ensured proper training and safety compliance.
+
+5. PROCESS ENGINEERING PVT. LTD., Navi Mumbai, India (Jul 2012 - Feb 2014)
+   * Role: Fabrication Supervisor
+   * Responsibilities: Directed heavy fabrication operations for industrial storage tanks, pressure vessels, and specialized oil reservoirs. Led fabrication, machine, and assembly sections (MIG & ARC welding, lathe, thread cutting, band saw, and press machines, electrical and hydraulic parts). Oversaw non-destructive testing (NDT) quality checks.
+
+6. GATIMAN AUTO PVT. LTD., Pithampur, Madhya Pradesh, India (May 2010 - May 2012)
+   * Role: Fabrication Supervisor / Head Fabricator
+   * Responsibilities: Supervised fabrication lines and final assembly operations for commercial vehicle tippers (Tata, Eicher, MAN). Managed mounting and assembly in the fabrication department.
+
+7. ANTONY AUTO PVT. LTD., Mahape, Navi Mumbai, India (Sep 2008 - Apr 2010)
+   * Role: Fabrication Supervisor
+   * Responsibilities: Managed manufacturing lines for municipal garbage compactors (garbage lifters) and concrete transit mixers (bulkers). Handled gas cutting, drilling, pug cutting, and MIG/ARC welding.
+
+=== KEY ENGINEERING AUTOMATION & SOFTWARE PROJECTS ===
+* Plate & Raw Material Nesting System: Custom algorithms to optimize metal sheet layout and minimize scrap.
+* Metal Weight & Parameter Calculator: Automated web utility for quick weight and structural dimension checks.
+* Excel & HTML Estimation Tools: Streamlined pricing calculations to accelerate client quotations.
+* Google Apps Script Dashboards: Automated data sharing systems linking shop floor spreadsheets and live reports.
+* Workflow & Email Automation: Developed background scripts and local tools to eliminate manual data entry bottlenecks and automate daily schedules.
+
+=== EDUCATION & CREDENTIALS ===
+* Industrial Training Institute (ITI)
+* Higher Secondary (12th Pass)
+* Certifications: Solid Edge Professional, Tekla Structures (Medium/Basic), Introduction to Engineering Mechanics (Coursera)
+---`;
+
+  let chatHistory = [];
+
+  function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+      sendMessage();
+    }
+  }
+
+  async function sendMessage() {
+    const userInputField = document.getElementById('userInput');
+    const userText = userInputField.value.trim();
+
+    if (!userText) return;
+
+    appendChatMsg(userText, 'user');
+    userInputField.value = '';
+    
+    chatHistory.push({ role: "user", parts: [{ text: userText }] });
+
+    const botMsgDiv = appendChatMsg('Thinking...', 'bot');
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt }] },
+          contents: chatHistory
+        })
+      });
+
+      const data = await response.json();
+      
+      if (data.candidates && data.candidates[0].content) {
+        const replyText = data.candidates[0].content.parts[0].text;
+        botMsgDiv.innerText = replyText;
+        chatHistory.push({ role: "model", parts: [{ text: replyText }] });
+      } else if (data.error) {
+        botMsgDiv.innerText = "API Error: " + data.error.message;
+      } else {
+        botMsgDiv.innerText = "Error: Invalid response format from API.";
+      }
+    } catch (error) {
+      botMsgDiv.innerText = "Error connecting to Gemini API. Check network connection.";
+      console.error(error);
+    }
+  }
+
+  function appendChatMsg(text, sender) {
+    const chatMessages = document.getElementById('chatMessages');
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `chat-msg ${sender}`;
+    msgDiv.innerText = text;
+    chatMessages.appendChild(msgDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return msgDiv;
+  }
 </script>
 
 </body>
