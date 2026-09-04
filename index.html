@@ -26,6 +26,7 @@
     justify-content: center;
     padding: 40px 20px;
     color: #333;
+    position: relative;
   }
 
   /* ===== MAIN CONTAINER ===== */
@@ -127,6 +128,32 @@
     align-items: center;
     justify-content: center;
     width: 24px;
+  }
+
+  /* ===== FLOATING CHAT BOT BUTTON ===== */
+  .chatbot-float {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+
+  .chatbot-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
   }
 
   /* ===== MODAL STYLE ===== */
@@ -273,6 +300,11 @@
 
   </div>
 </div>
+
+<!-- Floating Chat Bot Symbol on Bottom Right -->
+<a href="https://cvbot.netlify.app/" class="chatbot-float" title="Chat with RAG Agent">
+  💬
+</a>
 
 <footer>
   <div class="footer-links">
